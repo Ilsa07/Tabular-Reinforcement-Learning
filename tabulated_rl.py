@@ -259,7 +259,8 @@ class GridWorld(object):
             location = self.locs[state] # Compute its location on graph
             plt.text(location[1], location[0], action_arrow, ha='center', va='center') # Place it on graph
     
-        plt.show()
+        plt.savefig("Result_images/deterministic_policy.png")
+        plt.close()
     
     def draw_value(self, Value):
         """Draw a policy value function, The value need to be a np array of 22 values"""
@@ -272,7 +273,8 @@ class GridWorld(object):
             location = self.locs[state] # Compute the value location on graph
             plt.text(location[1], location[0], round(value,2), ha='center', va='center') # Place it on graph
     
-        plt.show()
+        plt.savefig("Result_images/value_function.png")
+        plt.close()
 
     def draw_deterministic_policy_grid(self, Policy, title, n_columns, n_lines):
         """Draw a grid of deterministic policy, The policy needs to be an arrya of np array of 22 values between 0 and 3 with"""
@@ -289,7 +291,8 @@ class GridWorld(object):
               location = self.locs[state] # Compute its location on graph
               plt.text(location[1], location[0], action_arrow, ha='center', va='center') # Place it on graph
           ax.title.set_text(title[subplot]) # Set the title for the graoh given as argument
-        plt.show()
+        plt.savefig("Result_images/deterministic_policy.png")
+        plt.close()
 
     def draw_value_grid(self, Value, title, n_columns, n_lines):
         """Draw a grid of value function, The value need to be an array of np array of 22 values """
@@ -303,7 +306,8 @@ class GridWorld(object):
               location = self.locs[state] # Compute the value location on graph
               plt.text(location[1], location[0], round(value,1), ha='center', va='center') # Place it on graph
           ax.title.set_text(title[subplot]) # Set the title for the graoh given as argument
-        plt.show()
+        plt.savefig("Result_images/grid_of_value_function.png")
+        plt.close()
     
     
     # Internal Helper Functions
@@ -321,7 +325,8 @@ class GridWorld(object):
         plt.subplot(1,3,3)
         plt.imshow(self.rewarders)
         plt.title('Reward states')
-        plt.show()
+        plt.savefig("Result_images/Grid_world_map.png")
+        plt.close()
         
     def build_grid_world(self):
         """Get the locations of all the valid states, the neighbours of each state (by state number),
