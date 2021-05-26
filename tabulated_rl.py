@@ -5,107 +5,79 @@ import random
 
 
 class GridWorld(object):
-
     def __init__(self):
-        
-        ### Attributes defining the Gridworld #######
-
         # Shape of the gridworld
         self.shape = (6,6)
-        
         # Locations of the obstacles
         self.obstacle_locs = [(1,1),(3,1),(4,1),(4,2),(2,3),(2,5),(4,4)]
-        
         # Locations for the absorbing states
         self.absorbing_locs = [(1,2),(4,3)]
-        
         # Rewards for each of the absorbing states 
         self.special_rewards = [10,-100] # Corresponds to each of the absorbing_locs
-        
         # Reward for all the other states
         self.default_reward = -1
-        
         # Starting location
         self.starting_loc = (3,0)
-        
         # Action names
         self.action_names = ['N','E','S','W'] # Action 0 is 'N', 1 is 'E' and so on
-        
         # Number of actions
         self.action_size = len(self.action_names)
-        
         # Randomizing action results: [1 0 0 0] to no Noise in the action results.
         self.action_randomizing_array = [0.75, 0.083, 0.083, 0.083]
-        
-        ############################################
     
-
-        #### Internal State  ####
-        
+        # Internal State
+        # **************    
         # Get attributes defining the world
         state_size, T, R, absorbing, locs = self.build_grid_world()
-        
         # Number of valid states in the gridworld (there are 22 of them - 5x5 grid minus obstacles)
         self.state_size = state_size
-        
         # Transition operator (3D tensor)
         self.T = T # T[st+1, st, a] gives the probability that action a will 
                    # transition state st to state st+1
-        
         # Reward function (3D tensor)
         self.R = R # R[st+1, st, a ] gives the reward for transitioning to state
                    # st+1 from state st with action a
-        
         # Absorbing states
         self.absorbing = absorbing
-        
         # The locations of the valid states 
         self.locs = locs # State 0 is at the location self.locs[0] and so on
-        
         # Number of the starting state
         self.starting_state = self.loc_to_state(self.starting_loc, locs);
-        
         # Locating the initial state
         self.initial = np.zeros((1,len(locs)));
         self.initial[0,self.starting_state] = 1
-        
         # Placing the walls on a bitmap
         self.walls = np.zeros(self.shape);
         for ob in self.obstacle_locs:
             self.walls[ob]=1
-            
         # Placing the absorbers on a grid for illustration
         self.absorbers = np.zeros(self.shape)
         for ab in self.absorbing_locs:
             self.absorbers[ab] = -1
-        
         # Placing the rewarders on a grid for illustration
         self.rewarders = np.zeros(self.shape)
         for i, rew in enumerate(self.absorbing_locs):
             self.rewarders[rew] = self.special_rewards[i]
-        
         #Illustrating the grid world
         self.paint_maps()
-
-        ################################
-
-    ####### Getters ###########
-    
+  
     def get_transition_matrix(self):
         return self.T
     
     def get_reward_matrix(self):
         return self.R
     
-    ########################
-
-
-    
-    ####### Methods #########
-    
-    def value_iteration(self, discount = 0.9, threshold = 0.0001):
-        ## Slide 144 of the lecture notes for the algorithm ##
-        
+    def value_iteration(self, discount:float = 0.9, threshold:float = 0.0001):
+        """
+        DOCSTRING
+            The following algorithm performs value iteration to find the optimal policy in the grid world
+        INPUTS
+            Discount: the discount of future reward, gamma in the literature
+            Threshold: below this change in the value function the algorithm will stop optimising
+        OUTPUT
+            optimal_policy: an array containing the optimal action for each state
+            epochs: the number of iterations performed
+        """
         # Transition and reward matrices, both are 3d tensors, c.f. internal state
         T = self.get_transition_matrix()
         R = self.get_reward_matrix()
@@ -138,8 +110,7 @@ class GridWorld(object):
 
                     # Compute the new delta
                     delta = max(delta, np.abs(v - V[state_idx]))
-            
-
+        
         # When the loop is finished, fill in the optimal policy
         optimal_policy = np.zeros((self.state_size, self.action_size)) # Initialisation
 
@@ -156,11 +127,20 @@ class GridWorld(object):
 
         return optimal_policy, epochs
 
-
-    # THis is basically policy improvement
-    def policy_iteration(self, discount=0.9, threshold = 0.0001):
-        ## Slide 139 of the lecture notes for pseudocode ##
-        
+    def policy_iteration(self, discount:float = 0.9, threshold: float = 0.0001):
+        """
+        DOCSTRING
+            The following algorithm performs value iteration to find the optimal policy in the grid world
+        INPUTS
+            Discount: the discount of future reward, gamma in the literature
+            Threshold: below this change in the value function the algorithm will stop optimising
+        OUTPUT
+            V: the final value function, an array contaning the discounted future reqard for each action in 
+            each state
+            optimal_policy: an array containing the optimal action for each state
+            epochs: the number of iterations performed
+            historical_Vs: value function over time for plotting
+        """
         # Transition and reward matrices, both are 3d tensors, c.f. internal state
         T = self.get_transition_matrix()
         R = self.get_reward_matrix()
@@ -208,10 +188,18 @@ class GridWorld(object):
             
         return V, policy, epochs, historical_Vs
                 
-        
-    
-    def policy_evaluation(self, policy, threshold, discount):
-        
+    def policy_evaluation(self, policy, threshold: float, discount: float):
+        """
+        DOCSTRING
+            The following algorithm performs policy iteration to find the optimal policy in the grid world
+        INPUTS
+            Discount: the discount of future reward, gamma in the literature
+            Threshold: below this change in the value function the algorithm will stop optimising
+        OUTPUT
+            V: the final value function, an array contaning the discounted future reqard for each action in 
+            each state
+            epochs: the number of iterations performed
+        """
         # Make sure delta is bigger than the threshold to start with
         delta= 2*threshold
         
@@ -247,25 +235,16 @@ class GridWorld(object):
                 Vnew[state_idx] = tmpV
             
             # After updating the values of all states, update the delta
-            # Note: The below is our example way of computing delta.
-            #       Other stopping criteria may be used (for instance mean squared error).
-            #       We encourage you to explore different ways of computing delta to see 
-            #       how it can influence outcomes.
             delta =  max(abs(Vnew-V))
-            # and save the new value into the old
             V=np.copy(Vnew)
             
         return V, epoch
 
-    ##########################
     
-    ########### Internal Drawing Functions #####################
-
-    ## You do not need to understand these functions in detail in order to complete the lab ##
-
-
+    # Internal Drawing Functions
+    # **************************
     def draw_deterministic_policy(self, Policy):
-        # Draw a deterministic policy
+        """Draw a deterministic policy"""
         # The policy needs to be a np array of 22 values between 0 and 3 with
         # 0 -> N, 1->E, 2->S, 3->W
         plt.figure()
@@ -281,11 +260,9 @@ class GridWorld(object):
             plt.text(location[1], location[0], action_arrow, ha='center', va='center') # Place it on graph
     
         plt.show()
-
     
     def draw_value(self, Value):
-        # Draw a policy value function
-        # The value need to be a np array of 22 values 
+        """Draw a policy value function, The value need to be a np array of 22 values"""
         plt.figure()
         
         plt.imshow(self.walls+self.rewarders +self.absorbers) # Create the graph of the grid
@@ -297,10 +274,8 @@ class GridWorld(object):
     
         plt.show()
 
-
     def draw_deterministic_policy_grid(self, Policy, title, n_columns, n_lines):
-        # Draw a grid of deterministic policy
-        # The policy needs to be an arrya of np array of 22 values between 0 and 3 with
+        """Draw a grid of deterministic policy, The policy needs to be an arrya of np array of 22 values between 0 and 3 with"""
         # 0 -> N, 1->E, 2->S, 3->W
         plt.figure(figsize=(20,8))
         for subplot in range (len(Policy)): # Go through all policies
@@ -317,8 +292,7 @@ class GridWorld(object):
         plt.show()
 
     def draw_value_grid(self, Value, title, n_columns, n_lines):
-        # Draw a grid of value function
-        # The value need to be an array of np array of 22 values 
+        """Draw a grid of value function, The value need to be an array of np array of 22 values """
         plt.figure(figsize=(20,8))
         for subplot in range (len(Value)): # Go through all values
           ax = plt.subplot(n_columns, n_lines, subplot+1) # Create a subplot for each value
@@ -330,20 +304,13 @@ class GridWorld(object):
               plt.text(location[1], location[0], round(value,1), ha='center', va='center') # Place it on graph
           ax.title.set_text(title[subplot]) # Set the title for the graoh given as argument
         plt.show()
-
-    ##########################
     
     
-    ########### Internal Helper Functions #####################
-
-    ## You do not need to understand these functions in detail in order to complete the lab ##
-
+    # Internal Helper Functions
+    # *************************
     def paint_maps(self) -> type(None):
-        """
-        DOCSTRING:
-            Prints out three different versions of the grid world, one showing the obstacles, one
-            showing the absorbing states and one showing the reward states.
-        """
+        """Prints out three different versions of the grid world, one showing the obstacles, one
+            showing the absorbing states and one showing the reward states"""
         plt.figure()
         plt.subplot(1,3,1)
         plt.imshow(self.walls)
@@ -356,10 +323,9 @@ class GridWorld(object):
         plt.title('Reward states')
         plt.show()
         
-
     def build_grid_world(self):
-        # Get the locations of all the valid states, the neighbours of each state (by state number),
-        # and the absorbing states (array of 0's with ones in the absorbing states)
+        """Get the locations of all the valid states, the neighbours of each state (by state number),
+        and the absorbing states (array of 0's with ones in the absorbing states)"""
         locations, neighbours, absorbing = self.get_topology()
         
         # Get the number of states
@@ -378,35 +344,24 @@ class GridWorld(object):
                     outcome -= 1
 
                 # Fill the transition matrix:
-                # A good way to understand the code, is to first ask ourselves what the structure 
-                # of the transition probability ‘matrix’ should be, given that we have state, successor state and action. 
-                # Thus, a simple row x column matrix of successor state and will not suffice, as we also have to condition 
-                #  on the action. So we can therefore choose to implement this to  have a structure that is 3 dimensional
-                # (technically a tensor, hence the variable name T). I would not worry too much about what a tensor is, 
-                # it is simply an array that takes 3 arguments to get a value, just like conventional matrix is an array that
-                # takes 2 arguments (row and column), to get a value. To touch all the elements in this structure we
-                # need therefore to loop over states and actions.
-
                 prob = self.action_randomizing_array[effect]
                 for prior_state in range(S):
                     post_state = neighbours[prior_state, outcome]
                     post_state = int(post_state)
                     T[post_state,prior_state,action] = T[post_state,prior_state,action]+prob
                     
-    
         # Build the reward matrix
         R = self.default_reward*np.ones((S,S,4))
         for i, sr in enumerate(self.special_rewards):
             post_state = self.loc_to_state(self.absorbing_locs[i],locations)
             R[post_state,:,:]= sr
         
-        return S, T,R,absorbing,locations
-    
+        return S, T, R, absorbing, locations
 
     def get_topology(self):
         """
         DOCSTRING:
-            
+            Get the topology of the grid world: the states, neighboring states and absorbing states
         OUTPUT:
             locs: array containing valid locations (not an obstacle) in the grid contains the absorbing states.
                 every valid location is in the format of (y_coordinate, x_coordinate)
@@ -415,15 +370,13 @@ class GridWorld(object):
                 [up, down, right, left]. if the number in the array is the state itself, that means that there
                 was an obstacle in the way and as the result of the movement the agent "bounced back" from the
                 wall and remaind in the same state
-            absorbing: 
+            absorbing: the indices of the absorbing states
         """
         height = self.shape[0]
         width = self.shape[1]
-        
         index = 1 
         locations = []
         neighbour_locations = []
-        
         
         for i in range(height):
             for j in range(width):
@@ -460,7 +413,6 @@ class GridWorld(object):
       
                 # Insert into neighbour matrix
                 state_neighbours[state,direction] = number_of_the_state;
-        
     
         # Translate absorbing locations into absorbing state indices
         absorbing = np.zeros((1,num_states))
@@ -469,7 +421,6 @@ class GridWorld(object):
             absorbing[0,absorbing_state] =1
         
         return locations, state_neighbours, absorbing 
-
 
     def loc_to_state(self, location:tuple, locations_list:list) -> type(int):
         """
@@ -481,7 +432,6 @@ class GridWorld(object):
         OUTPUT:
             the state number of the corresponding coordinate specified by the location
         
-        
         The states are numbered in the following fashion:
             0  1  2  3  4  5
             6  X  7  8  9  10
@@ -492,7 +442,6 @@ class GridWorld(object):
         """
         #takes list of locations and gives index corresponding to input loc
         return locations_list.index(tuple(location))
-
 
     def is_location(self, location: tuple) -> type(bool):
         """
@@ -512,7 +461,6 @@ class GridWorld(object):
         else:
              return True
 
-            
     def get_neighbour(self, location:tuple, direction:str) -> type(tuple):
         """
         DOCSTRING:
@@ -549,8 +497,6 @@ class GridWorld(object):
             # (y_coordinate, x_coordinate)
             return location
     
-    
-    ####### My Own functions ######
     def return_reward_of_step(self, successor_state) -> type(int):
         """
         DOCSTRING:
@@ -566,9 +512,6 @@ class GridWorld(object):
             return self.special_rewards[index]
         except:
             return self.default_reward
-    
-    
-    
     
     def calculate_e_greedy_policy(self, q_function, iteration: int):
         """
@@ -601,7 +544,6 @@ class GridWorld(object):
         # Return the policy from that Q function
         return Policy
     
-    
     def check_action_success(self, action: str) -> type(str):
         """
         DOCSTRING:
@@ -620,7 +562,6 @@ class GridWorld(object):
         possible_actions = possible_actions[possible_actions != action]
         
         # Remove my choosen action from the possible actions array
-        
         # The case when my action was successful
         if rand_val < self.action_randomizing_array[0]*100:
             return action
@@ -628,7 +569,6 @@ class GridWorld(object):
         # same probability
         else:
             return random.choice(possible_actions)
-    
     
     def get_action(self, state, Policy) -> type(str):
         """
@@ -664,7 +604,6 @@ class GridWorld(object):
             # Step will be West
             return 'W'
 
-        
     def get_actioin_index(self, action: str) -> type(int):
         if action == 'N':
             return 0
@@ -675,13 +614,10 @@ class GridWorld(object):
         elif action == 'W':
             return 3
     
-    
     def get_random_starting_state(self):
-        # Get a copy of all the locations and absorbing locations
-        starting_locations = [(0, 0), (0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (1, 0), (1, 3), (1, 4), (1, 5), (2, 0), (2, 1), (2, 2), (2, 4), (3, 0), (3, 2), (3, 3), (3, 4), (3, 5), (4, 0), (4, 5), (5, 0), (5, 1), (5, 2), (5, 3), (5, 4), (5, 5)]
-        
+        """Select a random starting locationwhich is a valid starting state (not absorbing or obstacle)"""
+        starting_locations = [(0, 0), (0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (1, 0), (1, 3), (1, 4), (1, 5), (2, 0), (2, 1), (2, 2), (2, 4), (3, 0), (3, 2), (3, 3), (3, 4), (3, 5), (4, 0), (4, 5), (5, 0), (5, 1), (5, 2), (5, 3), (5, 4), (5, 5)]    
         return random.choice(starting_locations)
-    
     
     def create_trace(self, Policy, starting_state) -> type(list):
         """
@@ -720,18 +656,21 @@ class GridWorld(object):
             
             # Move the current state to the successor state ie. make the step
             current_state = successor_state
-        
         return trace
-    
 
-    def evaluate_trace(self, trace, discount_factor):
-        # Has the structure of [[(state, index), discounted return],[]]
+    def evaluate_trace(self, trace: list, discount_factor: float) -> type(list):
+        """
+        DOCSTRING
+            Convert the traces to a list of returns based on the first visit principle
+        INPUTS
+            trace: the trace observed by the agent (state, action, reward) until terminal state
+            discount_factor: the discount of future reward, gamma in the literature
+        OUTPUTS
+            returns_list: list containint the returns for Q values in the format of ([s, a], discounted reward r)
+        """
+        # Has the structure of [[(state, action index), discounted return],[]]
         unique_sa_pairs = []
         returns_list = []
-        
-        #print('The trace is:')
-        #for step in trace:
-        #    print(step)
         
         # Get the unique State action pairs in the trace
         for index, step in enumerate(trace):
@@ -756,22 +695,26 @@ class GridWorld(object):
                 
                 # Add [(state, action), total_discounted_return] to the returns_list
                 returns_list.append([(step[0], step[1]), total_reward])
-        
-        # Output should be unique ([s, a], discounted reward r)
-        #print()
-        #print('The returns list is:')
-        #for element in returns_list:
-        #    print(element)
-    
         return returns_list
     
-    
-    def running_average_calculator(self, old_average, new_value, iterator_k):
+    def running_average_calculator(self, old_average:float, new_value:float, iterator_k:int):
+        """Function used to calculate running averages"""
         new_average = old_average+(1/iterator_k)*(new_value - old_average)
         return new_average
     
-    
     def update_q_in_mc(self, old_q, q_counter_matrix, returns_list):
+        """
+        DOCSTRING
+            Function to update the Q values in Monte Carlo Learning based on traces collected by the agent
+        INPUTS
+            old_q: an array containing the old Q values for the grid world
+            q_counter_matrix: an array containing the number of updates for each Q value, so the running
+                average can be calculated
+            returns_list: a list containing the traces observed by the agent
+        OUTPUT
+            old_q: the updated Q values array
+            q_counter_matrix: the updated list with the number of updates for each Q value
+        """
         # create a new Q matrix from the returns list
         new_Q = np.zeros((self.state_size, self.action_size))
         new_Q = new_Q - 1000
@@ -782,8 +725,6 @@ class GridWorld(object):
                 
         # Add the two Q matricies together with the running average calculator, use q_counter matrix and
         # also update it
-        #for old_q_row, new_q_row, q_counter_matrix_row in zip(old_q, new_Q, q_counter_matrix):
-        
         for i in range(len(new_Q)):
             #for old_q_value, new_q_value, q_counter_value in zip(old_q_row, new_q_rowq_counter_matrix_row):
             for j in range(len(new_Q[i])):
@@ -799,15 +740,22 @@ class GridWorld(object):
                     q_counter_matrix[i][j] = q_counter_matrix[i][j] + 1
         
         # return the new Q matrix and q new Q counter matrix
-        # !!Naming is shit, the old q is the new q, sorry future me!!
+        # Naming is shit, the old q is the new q
         return old_q, q_counter_matrix
     
-    
-    def calculate_V_from_Q(self, Q_function, Policy):
+    def calculate_V_from_Q(self, Q_function, Policy) -> type(list):
+        """
+        DOCSTRING
+            Calculate the value function from the the Q matrix and the policy, the value of the state is the
+            probability of taking the action in tha state with the current policy and the Q value for that
+            state action pair
+        INPUTS
+            Q_function: an array containing the Q values for each state and action pair
+            Policy: an array containg the policy for the grid world
+        OUTPUT
+            V_function: the value function of the grid world
+        """
         V_function = []
-        
-        # The value of a state is equal to the probability of taking that action in the state
-        # (from the policy) and the corresponding Q value of that action in the state
         for Q_row, Policy_row in zip(Q_function, Policy):
             value = 0
             for q_value, policy_value in zip(Q_row, Policy_row):
@@ -816,11 +764,19 @@ class GridWorld(object):
         
         return V_function
     
-    
-    def get_total_return_from_trace_backwards(self, trace, discount_factor):
+    def get_total_return_from_trace_backwards(self, trace:list, discount_factor:float) -> type(float):
+        """
+        DOCSTRING
+            The function calculates the total reward for a state action pair, calculated backwards for more
+            accurate values and better results.
+        INPUT
+            trace: a list containing state, action, reward steps until a terminal state
+            discount_factor: the discount of future reward, gamma in the literature
+        OUTPUT
+            total_reward: the total discounted reward for a state and action
+        """
         total_reward = 0
         gamma_multiplier = 1
-        
         # Reverse the order of the array to get backwards propagated return
         trace = np.flip(trace)
         
@@ -830,12 +786,26 @@ class GridWorld(object):
             else:
                 total_reward += trace[i][2]*discount_factor**gamma_multiplier
                 gamma_multiplier += 1
-        
         return total_reward
         
     
-###########################################
-    def do_monteraclo(self, discount_factor, iteration_counter):
+    # Reinforcement Learning Algorithms
+    # *********************************
+    def do_monteraclo(self, discount_factor:float, iteration_counter:int):
+        """
+        DOCSTRING
+            The algorithm performs First Visit Monte Carlo Learning, with backwards calculated returns for
+            better performance
+        INPUTS
+            discount_factor: the discount of future reward, gamma in the literature
+            iteration_counter: the number of iterations to run
+        OUTPUTS
+            Policy: an array containing the final policy achieved by the algorithm
+            V_function: an array containing the value function achieved by the algorithm
+            returns_for_each_trace: a list of returns for each iterations for plotting
+            historical_V_func_data: a lost containing all of the value functions for RMS error calculation and
+                plotting later
+        """
         iteration = 1
         # Create a random Q function (number of states x number of action matrix) initialised to 0
         Q_function = np.zeros((self.state_size, self.action_size))
@@ -851,11 +821,8 @@ class GridWorld(object):
         
         # Array to store the returns from each episode for the plot
         returns_for_each_trace = []
-        
         historical_V_func_data = []
         
-        # You will have to loop this whole part N times!
-        # ##############################################
         while iteration < iteration_counter:
             starting_state = self.get_random_starting_state()
             trace = self.create_trace(Policy, starting_state)
@@ -870,21 +837,10 @@ class GridWorld(object):
             Policy = self.calculate_e_greedy_policy(Q_function, iteration)
             iteration += 1
             
-            # For plotting the "learning rate", run the agent from the same spot with the new policy
-            # **************************************************************************************
             # Get the discounted total return from the trace, counted backwards
             trace = self.create_trace(Policy, self.get_random_starting_state())
             total_reward_from_episode = self.get_total_return_from_trace_backwards(trace, discount_factor)
             returns_for_each_trace.append(total_reward_from_episode)
-        
-        
-        # Plot
-        #print(returns_for_each_trace)
-        #print()
-        #plt.plot(returns_for_each_trace)
-        #plt.ylabel('Total Discounted Return')
-        #plt.xlabel('Number of Episodes')
-        #plt.show()
         
             # Calculate the value function V(s) from the Q(s,a) function
             V_function = self.calculate_V_from_Q(Q_function, Policy)
@@ -892,16 +848,40 @@ class GridWorld(object):
         
         return Policy, V_function, returns_for_each_trace, historical_V_func_data
     
-    
-    def SARSA_Q_update(self, Q_function, state, action, learning_rate, reward, discount_factor, successor_state, successor_state_action):
-        # Q update based on slide 207
+    def SARSA_Q_update(self, Q_function:list, state:int, action:int, learning_rate:float, reward:float, discount_factor:float, successor_state:int, successor_state_action:int) -> type(list):
+        """
+        DOCSTRING
+            Update the Q function for the SARSA algorithm
+        INPUTS
+            Q_function: the previous Q function
+            state: the index of the current state
+            action: the index of the action taken
+            learning_rate: used by the running average function
+            reward: the reward for that state and action
+            discount_factor: 
+            successor_state: the index of the successor state
+            successor_state_action: the index of the action taken in the successor state
+        PUTPUT
+            Q_function: the updated Q function (values for each state and action pair)
+        """
         Q_function[state][action] = Q_function[state][action] + learning_rate*(reward + discount_factor*Q_function[successor_state][successor_state_action] - Q_function[state][action])
-        
         return Q_function
     
-    
-    def do_SARSA(self, discount_factor, learning_rate, iteration_counter):
-        # Slide 207
+    def do_SARSA(self, discount_factor:float, learning_rate:float, iteration_counter:int):
+        """
+        DOCSTRING
+            Run the SARSA algorithm on the grid world to learn the optimal policy and value function
+        INPUT
+            discount_factor: the discount of future reward, gamma in the literature
+            learning_rate: the learning rate for the algorithm, used by the running average function
+            iteration_counter: the number of iterations to run
+        OUTPUT
+            Policy: an array containing the final policy achieved by the algorithm
+            V_function: an array containing the value function achieved by the algorithm
+            returns_for_each_trace: a list of returns for each iterations for plotting
+            historical_V_func_data: a lost containing all of the value functions for RMS error calculation and
+                plotting later
+        """
         iteration = 1
         
         # Create a random Q function (number of states x number of action matrix) initialised to 0
@@ -912,7 +892,6 @@ class GridWorld(object):
         
         # Array to store the returns from each episode for the plot
         returns_for_each_trace = []
-        
         historical_V_func_data = []
         
         # Run traces n number of times
@@ -943,6 +922,7 @@ class GridWorld(object):
                 # Update the Q function
                 Q_function = self.SARSA_Q_update(Q_function, current_state_index, action_index, learning_rate, reward, discount_factor, successor_state_index, successor_state_action_index)
                 learning_rate = learning_rate * 0.9999
+
                 # Update the current state and successor state
                 current_state = successor_state
                 action = successpr_state_action_taken
@@ -952,7 +932,6 @@ class GridWorld(object):
             total_reward_from_episode = self.get_total_return_from_trace_backwards(trace, discount_factor)
             returns_for_each_trace.append(total_reward_from_episode)
             
-            
             # Update the policy from the Q function
             Policy = self.calculate_e_greedy_policy(Q_function, iteration)
             iteration += 1
@@ -961,128 +940,4 @@ class GridWorld(object):
             V_function = self.calculate_V_from_Q(Q_function, Policy)
             historical_V_func_data.append(V_function)
         
-        # Return Policy, V_function
         return Policy, V_function, returns_for_each_trace, historical_V_func_data
-
-
-
-### Define the grid
-print("Creating the Grid world, represented as:\n")
-grid = GridWorld()
-
-return_curves = []
-v_curves = []
-
-for x in range(100):
-    Policy, V_function, return_curve, sarsa_historical_v_funcs = grid.do_SARSA(0.4, 0.3, 4000)
-    return_curves.append(return_curve)
-    v_curves.append(sarsa_historical_v_funcs)
-
-sarsa_historical_v_funcs = np.average(v_curves, axis=0)
-average_sarsa_curve = np.average(return_curves, axis=0) 
-
-
-print(f'The mean of the dataset is: {np.mean(average_sarsa_curve)}')
-print(f'The standard deviation of the dataset is: {np.std(average_sarsa_curve)}')
-
-
-plt.plot(average_sarsa_curve)
-plt.ylabel('Total Discounted Return')
-plt.xlabel('Number of Episodes')
-plt.show()
-
-# Plot policy for policy iteration
-print("\n\nThe optimal policy using policy iteration is:\n\n {}".format(Policy))
-print("\n\nIts graphical representation is:\n")
-grid.draw_deterministic_policy(np.array([np.argmax(Policy[row,:]) for row in range(grid.state_size)]))
-
-# Plot value function for policy iteration
-print("The value of the optimal policy computed using policy iteration is:\n\n {}".format(V_function))
-print("\n\nIts graphical representation is:\n")
-grid.draw_value(V_function)
-
-
-
-### Define the grid
-print("Creating the Grid world, represented as:\n")
-grid = GridWorld()
-
-return_curves = []
-v_curves = []
-
-for x in range(100):
-    Policy, V_function, return_curve, mc_historical_v_funcs = grid.do_monteraclo(0.4, 2000)
-    return_curves.append(return_curve)
-    v_curves.append(mc_historical_v_funcs)
-
-average_mc_curve = np.average(return_curves, axis=0) 
-mc_historical_v_funcs = np.average(v_curves, axis=0)
-                       
-plt.plot(average_mc_curve)
-plt.ylabel('Total Discounted Return')
-plt.xlabel('Number of Episodes')
-plt.show()
-
-print(f'The mean of the dataset is: {np.mean(average_mc_curve)}')
-print(f'The standard deviation of the dataset is: {np.std(average_mc_curve)}')
-    
-    
-# Plot policy for policy iteration
-print("\n\nThe optimal policy using policy iteration is:\n\n {}".format(Policy))
-print("\n\nIts graphical representation is:\n")
-grid.draw_deterministic_policy(np.array([np.argmax(Policy[row,:]) for row in range(grid.state_size)]))
-
-# Plot value function for policy iteration
-print("The value of the optimal policy computed using policy iteration is:\n\n {}".format(V_function))
-print("\n\nIts graphical representation is:\n")
-grid.draw_value(V_function)
-
-
-
-
-# Policy iteration algorithm
-V_opt, pol_opt, epochs, iteration_historical_v_functions = grid.policy_iteration(0.4, 0.00001)
-
-# Plot value function for policy iteration
-print("The value of the optimal policy computed using policy iteration is:\n\n {}".format(V_opt))
-print("\n\nIts graphical representation is:\n")
-grid.draw_value(V_opt)
-
-
-
-# calculate RMS error for both lists
-sarsa_rms_error = []
-mc_rms_error = []
-
-for sarsa, mc in zip(sarsa_historical_v_funcs[:400], mc_historical_v_funcs[:400]):
-    mc_error = iteration_historical_v_functions[-1] - mc
-    sarsa_error = iteration_historical_v_functions[-1] - sarsa
-    
-    mc_error = mc_error**2
-    sarsa_error = sarsa_error**2
-    
-    mc_sum = np.sum(mc_error)
-    sarsa_sum = np.sum(sarsa_error)
-
-    mc_sum = np.sqrt(mc_sum)
-    sarsa_sum = np.sqrt(sarsa_sum)
-    
-    sarsa_rms_error.append(sarsa_sum)
-    mc_rms_error.append(mc_sum)
-
-plt.plot(sarsa_rms_error)
-plt.plot(mc_rms_error)
-plt.ylabel('RMS Error')
-plt.xlabel('Number of Episodes')
-plt.legend(['SARSA', 'Monte Carlo'], loc='upper right')
-
-plt.show()
-
-
-plt.plot(sarsa_rms_error, average_sarsa_curve[:400],'ro')
-plt.plot(mc_rms_error, average_mc_curve[:400], 'bo')
-plt.ylabel('Return')
-plt.xlabel('RMS Error')
-plt.legend(['SARSA', 'Monte Carlo'], loc='upper right')
-
-plt.show()
