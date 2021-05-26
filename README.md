@@ -6,13 +6,13 @@ The optimal value function and optimal policy was calculated with the policy ite
 
 ### Monte Carlo Learning
 The optimal value function was estimated by implementing a First Visit Online Monte Carlo Iterative Optimisation algorithm, which relies on sampling only. The starting state for each simulation is chosen randomly out of the valid non-terminal states, which helps the agent explore the environment. In each iteration of the algorithm, a trace was produced with the current policy, which was then used to update the Q function (using online averaging) with values produced by the First Visit evaluation of the trace. After the Q function was updated from the trace a new ε-greedy policy is calculated from the updated Q function. A discount factor of γ=0.4 was used. The exploration parameter ε was dynamically set after each iteration with Equation 1 where k is the number of episodes. This was done to ensure that the agent explores all the possible actions in each state in the beginning of the algorithm, but as the number of iterations increase and the world is explored, it will tend to choose the optimal actions. This also ensures that the ε-greedy operation is GLIE, since ε tends to zero as the number of iterations tend to infinity.
-> ε=1/k                                                                                             (Equation 1)
+> Equation 1 ε=1/k
 
 The learning rate α was also dynamically set after each iteration using Equation 2 where k is the number of episodes. The learning rate controls the rate of forgetting old episodes.
-> α=1/k                                                                                             (Equation 2)
+> Equation 2 α=1/k                   
 
 The implemented algorithm calculated an optimal policy and Q function, which was then used to calculate the optimal value function using Equation 3.
-> V^π (s)=∑(a∈A)π(s,a)Q^π (s,a)〗                                                                   (Equation 3)
+> Equation 3 V^π (s)=∑(a∈A)π(s,a)Q^π (s,a)
 
 ### SARSA (State-Action-Reward-State-Action)
 Slide 207
