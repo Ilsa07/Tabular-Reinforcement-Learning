@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed May 26 09:49:41 2021
-
-@author: malat
-"""
-
 import numpy as np
 import matplotlib.pyplot as plt
 import random
@@ -1024,7 +1017,7 @@ for x in range(100):
 
 average_mc_curve = np.average(return_curves, axis=0) 
 mc_historical_v_funcs = np.average(v_curves, axis=0)
-                           
+                       
 plt.plot(average_mc_curve)
 plt.ylabel('Total Discounted Return')
 plt.xlabel('Number of Episodes')
@@ -1093,16 +1086,3 @@ plt.xlabel('RMS Error')
 plt.legend(['SARSA', 'Monte Carlo'], loc='upper right')
 
 plt.show()
-
-
-
-
-
-
-
-
-
-
-
-
-
