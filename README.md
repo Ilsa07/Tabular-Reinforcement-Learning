@@ -15,7 +15,7 @@ The implemented algorithm calculated an optimal policy and Q function, which was
 > Equation 3 V^π (s)=∑(a∈A)π(s,a)Q^π (s,a)
 
 ### SARSA (State-Action-Reward-State-Action)
-Slide 207
+The implemented SARSA On-Policy Learning Temporal Difference Control algorithm uses both bootstrapping and sampling and relies on an ε-greedy policy. Exploring starts were implemented to allow the agent to experience every state and action. The exploration parameter ε was dynamically set after each iteration of the policy using Equation 1 where k is the number of episodes. A discount factor of γ=0.4 was used. The learning rate was set to α=0.3, which slowed down the learning process but gave a more stable result
 
 
 ## Getting Started
