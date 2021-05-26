@@ -6,13 +6,13 @@ The optimal value function and optimal policy was calculated with the policy ite
 
 ### Monte Carlo Learning
 The optimal value function was estimated by implementing a First Visit Online Monte Carlo Iterative Optimisation algorithm, which relies on sampling only. The starting state for each simulation is chosen randomly out of the valid non-terminal states, which helps the agent explore the environment. In each iteration of the algorithm, a trace was produced with the current policy, which was then used to update the Q function (using online averaging) with values produced by the First Visit evaluation of the trace. After the Q function was updated from the trace a new ε-greedy policy is calculated from the updated Q function. A discount factor of γ=0.4 was used. The exploration parameter ε was dynamically set after each iteration with Equation 1 where k is the number of episodes. This was done to ensure that the agent explores all the possible actions in each state in the beginning of the algorithm, but as the number of iterations increase and the world is explored, it will tend to choose the optimal actions. This also ensures that the ε-greedy operation is GLIE, since ε tends to zero as the number of iterations tend to infinity.
-> Equation 1 ε=1/k
+Equation 1: ![equation_1](https://latex.codecogs.com/gif.latex?%5Cepsilon%20%3D%201/k)
 
 The learning rate α was also dynamically set after each iteration using Equation 2 where k is the number of episodes. The learning rate controls the rate of forgetting old episodes.
-> Equation 2 α=1/k                   
+Equation 2: ![equation_2](https://latex.codecogs.com/gif.latex?%5Calpha%20%3D%201/k)                
 
 The implemented algorithm calculated an optimal policy and Q function, which was then used to calculate the optimal value function using Equation 3.
-> Equation 3 ![equation_3](https://latex.codecogs.com/gif.latex?V%5E%5Cpi%28s%29%3D%5Csum%20_%7Ba%20%5Cepsilon%20A%7D%5Cpi%28s%2Ca%29Q%5E%5Cpi%28s%2Ca%29)
+Equation 3: ![equation_3](https://latex.codecogs.com/gif.latex?V%5E%5Cpi%28s%29%3D%5Csum%20_%7Ba%20%5Cepsilon%20A%7D%5Cpi%28s%2Ca%29Q%5E%5Cpi%28s%2Ca%29)
 
 ### SARSA (State-Action-Reward-State-Action)
 The implemented SARSA On-Policy Learning Temporal Difference Control algorithm uses both bootstrapping and sampling and relies on an ε-greedy policy. Exploring starts were implemented to allow the agent to experience every state and action. The exploration parameter ε was dynamically set after each iteration of the policy using Equation 1 where k is the number of episodes. A discount factor of γ=0.4 was used. The learning rate was set to α=0.3, which slowed down the learning process but gave a more stable result
